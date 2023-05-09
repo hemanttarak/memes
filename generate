@@ -1,0 +1,73 @@
+<html>
+<head>
+  <title>Meme Generator</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+</head>
+<body>
+  <div class="container mt-5">
+    <h1 class="text-center mb-5">Meme Generator</h1>
+    <div class="row">
+      <div class="col-md-6">
+        <form id="openai-form">
+          <div class="form-group">
+            <label for="prompt">Enter a caption for your meme:</label>
+            <input type="text" class="form-control" id="prompt" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Generate Meme</button>
+        </form>
+      </div>
+      <div class="col-md-6">
+        <div id="meme-container" class="d-none">
+          <img id="meme" class="img-fluid mb-3">
+          <button id="download-btn" class="btn btn-success">Download Meme</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script>
+    const giphyApiKey = 'your_giphy_api_key_here';
+    const openaiApiKey = 'your_openai_api_key_here';
+    const giphyEndpoint = `https://api.giphy.com/v1/gifs/random?api_key=${giphyApiKey}&tag=meme&rating=r`;
+    const openaiEndpoint = 'https://api.openai.com/v1/engines/davinci-codex/completions';
+    const openaiPrompt = 'Make me a meme with the caption';
+
+    const memeContainer = document.getElementById('meme-container');
+    const memeImg = document.getElementById('meme');
+    const downloadBtn = document.getElementById('download-btn');
+
+    const openaiForm = document.getElementById('openai-form');
+    openaiForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const prompt = document.getElementById('prompt').value;
+      try {
+        const response = await axios.post(openaiEndpoint, {
+          prompt: `${openaiPrompt} "${prompt}"`,
+          max_tokens: 60,
+          n: 1,
+          stop: '\n',
+        }, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${openaiApiKey}`,
+          },
+        });
+        const caption = response.data.choices[0].text.trim();
+        const giphyResponse = await axios.get(giphyEndpoint);
+        const imageUrl = giphyResponse.data.data.image_url;
+        memeImg.src = imageUrl;
+        memeImg.alt = caption;
+        memeContainer.classList.remove('d-none');
+        downloadBtn.addEventListener('click', () => {
+          const link = document.createElement('a');
+          link.download = 'meme.png';
+          link.href = imageUrl;
+          link.click();
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    });
+  </script>
+</body>
+</html>
